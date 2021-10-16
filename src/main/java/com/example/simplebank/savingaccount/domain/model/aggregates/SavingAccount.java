@@ -1,5 +1,6 @@
 package com.example.simplebank.savingaccount.domain.model.aggregates;
 
+import com.example.simplebank.configs.audit.JpaAuditListener;
 import com.example.simplebank.shareddomain.models.BaseAggregate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EntityListeners({JpaAuditListener.class})
 public class SavingAccount extends BaseAggregate {
 
     @Id
