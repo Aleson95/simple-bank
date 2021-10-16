@@ -5,6 +5,7 @@ import com.example.simplebank.savingaccount.application.internal.queryservices.S
 import com.example.simplebank.savingaccount.domain.model.aggregates.SavingAccount;
 import com.example.simplebank.savingaccount.domain.model.commands.CreateSavingAccountCommand;
 import com.example.simplebank.savingaccount.application.internal.commandservices.SavingAccountCommandService;
+import com.example.simplebank.savingaccount.interfaces.rest.dto.FinalBalanceResourceDto;
 import com.example.simplebank.savingaccount.interfaces.rest.dto.SavingAccountResourceDto;
 import com.example.simplebank.shareddomain.commons.messages.AppResponse;
 import com.example.simplebank.shareddomain.commons.utils.AppUtils;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityListeners;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -53,6 +56,23 @@ public class SavingAccountController {
         return ResponseEntity.ok(AppUtils.successResponse("Berhasil mengambil data Saving Account", savingAccount));
     }
 
+    @GetMapping("/estimateFinalBalance")
+    public ResponseEntity<?> tryEstimateFinalBalance(@RequestParam @NotNull Integer savingTenor,
+                                                     @RequestParam @NotNull BigDecimal firstDepositAmount,
+                                                     @RequestParam @NotNull BigDecimal monthlyDepositAmount,
+                                                     @RequestParam @NotNull String purposeOfSaving){
+        BigDecimal finalBalance = queryService.calculateFinalBalance(savingTenor, firstDepositAmount, monthlyDepositAmount);
+        return ResponseEntity.ok(
+                AppUtils.successResponse(
+                        "Berhasil menghitung estimasi final balance",
+                        toDtoFromRequestAndDomainModel(SavingAccountResourceDto.builder()
+                                .savingTenor(savingTenor)
+                                .firstDepositAmount(firstDepositAmount)
+                                .monthlyDepositAmount(monthlyDepositAmount)
+                                .purposeOfSaving(purposeOfSaving)
+                                .build(), finalBalance)));
+    }
+
     public CreateSavingAccountCommand toCommandFromDto(SavingAccountResourceDto resourceDto){
         return CreateSavingAccountCommand.builder()
                 .savingTenor(resourceDto.getSavingTenor())
@@ -66,6 +86,13 @@ public class SavingAccountController {
         String field = ((FieldError) bindingResult.getAllErrors().get(0)).getField();
         String errorMessage = bindingResult.getAllErrors().get(0).getDefaultMessage();
         return AppUtils.errorResponse(message, field, errorMessage);
+    }
+
+    public FinalBalanceResourceDto toDtoFromRequestAndDomainModel(SavingAccountResourceDto resourceDto, BigDecimal finalBalance){
+        return FinalBalanceResourceDto.builder()
+                .savingAccount(resourceDto)
+                .finalBalance(finalBalance)
+                .build();
     }
 
 }
